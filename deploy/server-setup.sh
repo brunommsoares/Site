@@ -21,6 +21,8 @@ if ! command -v nginx >/dev/null 2>&1; then
     echo "No supported package manager found" >&2; exit 1
   fi
 fi
+# Ubuntu/Debian ship a default site that would win over ours
+rm -f /etc/nginx/sites-enabled/default
 systemctl enable --now nginx
 
 mkdir -p "$SITE_DIR"
@@ -47,9 +49,6 @@ server {
 }
 EOF
 fi
-
-# Ubuntu/Debian ship a default site that would win over ours
-rm -f /etc/nginx/sites-enabled/default
 
 nginx -t
 systemctl reload nginx
