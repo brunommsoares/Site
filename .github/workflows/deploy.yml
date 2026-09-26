@@ -1,0 +1,36 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main, claude/wizardly-dijkstra-25nzpp]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ec2
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USER: ${{ secrets.EC2_USER }}
+      EC2_SSH_KEY_B64: ${{ secrets.EC2_SSH_KEY_B64 }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      CERTBOT_EMAIL: ${{ vars.CERTBOT_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        id: check
+        run: |
+          if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ] || [ -z "$EC2_SSH_KEY_B64" ]; then
+            echo "::warning::EC2_HOST / EC2_USER / EC2_SSH_KEY_B64 secrets not set — skipping deploy"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        if: steps.check.outputs.ready == 'true'
+        run: bash deploy/deploy.sh
